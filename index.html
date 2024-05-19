@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<!-- Created with https://packager.turbowarp.org/ -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- We only include this to explicitly loosen the CSP of various packager environments. It does not provide any security. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:">
+  <title>Notorians</title>
+  <style>
+    body {
+      color: #ffffff;
+      font-family: sans-serif;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    :root, body.is-fullscreen {
+      background-color: #000000;
+    }
+    [hidden] {
+      display: none !important;
+    }
+    h1 {
+      font-weight: normal;
+    }
+    a {
+      color: inherit;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    #app, #loading, #error, #launch {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      cursor: default;
+      user-select: none;
+      -webkit-user-select: none;
+      background-color: #000000;
+    }
+    #launch {
+      background-color: rgba(0, 0, 0, 0.7);
+      cursor: pointer;
+    }
+    .green-flag {
+      width: 80px;
+      height: 80px;
+      padding: 16px;
+      border-radius: 100%;
+      background: rgba(255, 255, 255, 0.75);
+      border: 3px solid hsla(0, 100%, 100%, 1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    #loading {
+      
+    }
+    .progress-bar-outer {
+      border: 1px solid currentColor;
+      height: 10px;
+      width: 200px;
+      max-width: 200px;
+    }
+    .progress-bar-inner {
+      height: 100%;
+      width: 0;
+      background-color: currentColor;
+    }
+    .loading-text, noscript {
+      font-weight: normal;
+      font-size: 36px;
+      margin: 0 0 16px;
+    }
+    .loading-image {
+      margin: 0 0 16px;
+    }
+    #error-message, #error-stack {
+      font-family: monospace;
+      max-width: 600px;
+      white-space: pre-wrap;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    #error-stack {
+      text-align: left;
+      max-height: 200px;
+      overflow: auto;
+    }
+    .control-button {
+      width: 2rem;
+      height: 2rem;
+      padding: 0.375rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: pointer;
+      border: 0;
+      border-radius: 4px;
+    }
+    .control-button:hover {
+      background: #ff4c4c26;
+    }
+    .control-button.active {
+      background: #ff4c4c59;
+    }
+    .fullscreen-button {
+      background: white !important;
+    }
+    .standalone-fullscreen-button {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 0 0 0 4px;
+      padding: 4px;
+      cursor: pointer;
+    }
+    .sc-canvas {
+      cursor: auto;
+    }
+    .sc-monitor-root[data-opcode^="data_"] .sc-monitor-value-color {
+      background-color: #ff8c1a;
+    }
+    .sc-monitor-row-value-outer {
+      background-color: #fc662c;
+    }
+    .sc-monitor-row-value-editing .sc-monitor-row-value-outer {
+      background-color: #e25b27;
+    }
+    
+  </style>
+  <meta name="theme-color" content="#000000">
+  
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="launch" class="screen" hidden title="Click to start">
+    <div class="green-flag">
+      <svg viewBox="0 0 16.63 17.5" width="42" height="44">
+        <defs><style>.cls-1,.cls-2{fill:#4cbf56;stroke:#45993d;stroke-linecap:round;stroke-linejoin:round;}.cls-2{stroke-width:1.5px;}</style></defs>
+        <path class="cls-1" d="M.75,2A6.44,6.44,0,0,1,8.44,2h0a6.44,6.44,0,0,0,7.69,0V12.4a6.44,6.44,0,0,1-7.69,0h0a6.44,6.44,0,0,0-7.69,0"/>
+        <line class="cls-2" x1="0.75" y1="16.75" x2="0.75" y2="0.75"/>
+      </svg>
+    </div>
+  </div>
+
+  <div id="loading" class="screen">
+    <noscript>Enable JavaScript</noscript>
+    <h1 class="loading-text">loading never forget</h1>
+    
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="loading-inner"></div></div>
+  </div>
+
+  <div id="error" class="screen" hidden>
+    <h1>Error</h1>
+    <details>
+      <summary id="error-message"></summary>
+      <p id="error-stack"></p>
+    </details>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const appElement = document.getElementById('app');
+    const launchScreen = document.getElementById('launch');
+    const loadingScreen = document.getElementById('loading');
+    const loadingInner = document.getElementById('loading-inner');
+    const errorScreen = document.getElementById('error');
+    const errorScreenMessage = document.getElementById('error-message');
+    const errorScreenStack = document.getElementById('error-stack');
+
+    const handleError = (error) => {
+      console.error(error);
+      if (!errorScreen.hidden) return;
+      errorScreen.hidden = false;
+      errorScreenMessage.textContent = '' + error;
+      let debug = error && error.stack || 'no stack';
+      debug += '\nUser agent: ' + navigator.userAgent;
+      errorScreenStack.textContent = debug;
+    };
+    const setProgress = (progress) => {
+      if (loadingInner) loadingInner.style.width = progress * 100 + '%';
+    };
+    const interpolate = (a, b, t) => a + t * (b - a);
+
+    try {
+      setProgress(0.1);
+
+      const scaffolding = new Scaffolding.Scaffolding();
+      scaffolding.width = 480;
+      scaffolding.height = 360;
+      scaffolding.resizeMode = "preserve-ratio";
+      scaffolding.editableLists = false;
+      scaffolding.usePackagedRuntime = true;
+      scaffolding.setup();
+      scaffolding.appendTo(appElement);
+
+      const vm = scaffolding.vm;
+      window.scaffolding = scaffolding;
+      window.vm = scaffolding.vm;
+      window.Scratch = {
+        vm,
+        renderer: vm.renderer,
+        audioEngine: vm.runtime.audioEngine,
+        bitmapAdapter: vm.runtime.v2BitmapAdapter,
+        videoProvider: vm.runtime.ioDevices.video.provider
+      };
+
+      scaffolding.setUsername("player####".replace(/#/g, () => Math.floor(Math.random() * 10)));
+      scaffolding.setAccentColor("#ff4c4c");
+
+      try {
+        scaffolding.addCloudProvider(new Scaffolding.Cloud.WebSocketProvider(["wss://clouddata.turbowarp.org","wss://clouddata.turbowarp.xyz"], "p4-@Notorians.sb3"));
+      } catch (error) {
+        console.error(error);
+      }
+
+      vm.setTurboMode(false);
+      if (vm.setInterpolation) vm.setInterpolation(false);
+      if (vm.setFramerate) vm.setFramerate(30);
+      if (vm.renderer.setUseHighQualityRender) vm.renderer.setUseHighQualityRender(false);
+      if (vm.setRuntimeOptions) vm.setRuntimeOptions({
+        fencing: true,
+        miscLimits: true,
+        maxClones: 300,
+      });
+      if (vm.setCompilerOptions) vm.setCompilerOptions({
+        enabled: true,
+        warpTimer: false
+      });
+      if (vm.renderer.setMaxTextureDimension) vm.renderer.setMaxTextureDimension(2048);
+
+      if (typeof ScaffoldingAddons !== 'undefined') {
+        ScaffoldingAddons.run(scaffolding, {"gamepad":false,"pointerlock":false,"specialCloudBehaviors":false,"unsafeCloudBehaviors":false,"pause":false});
+      }
+
+      scaffolding.setExtensionSecurityManager({
+        getSandboxMode: () => 'unsandboxed',
+        canLoadExtensionFromProject: () => true
+      });
+      for (const extension of ["data:text/javascript;,(function(Scratch)%20%7B%20%2F%2F%20Name%3A%20Sound%20Expanded%0D%0A%2F%2F%20Description%3A%20Adds%20more%20sound-related%20blocks.%0D%0A%2F%2F%20ID%3A%20lmsSoundExpanded%0D%0A%2F%2F%20By%3A%20LilyMakesThings%20%3Chttps%3A%2F%2Fscratch.mit.edu%2Fusers%2FLilyMakesThings%2F%3E%0D%0A%2F%2F%20License%3A%20MIT%20AND%20LGPL-3.0%0D%0A%0D%0A(function%20(Scratch)%20%7B%0D%0A%20%20%22use%20strict%22%3B%0D%0A%0D%0A%20%20const%20vm%20%3D%20Scratch.vm%3B%0D%0A%20%20const%20runtime%20%3D%20vm.runtime%3B%0D%0A%20%20const%20soundCategory%20%3D%20runtime.ext_scratch3_sound%3B%0D%0A%0D%0A%20%20class%20SoundExpanded%20%7B%0D%0A%20%20%20%20getInfo()%20%7B%0D%0A%20%20%20%20%20%20return%20%7B%0D%0A%20%20%20%20%20%20%20%20id%3A%20%22lmsSoundExpanded%22%2C%0D%0A%20%20%20%20%20%20%20%20color1%3A%20%22%23CF63CF%22%2C%0D%0A%20%20%20%20%20%20%20%20color2%3A%20%22%23C94FC9%22%2C%0D%0A%20%20%20%20%20%20%20%20color3%3A%20%22%23BD42BD%22%2C%0D%0A%20%20%20%20%20%20%20%20name%3A%20%22Sound%20Expanded%22%2C%0D%0A%20%20%20%20%20%20%20%20blocks%3A%20%5B%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22startLooping%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22start%20looping%20%5BSOUND%5D%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20SOUND%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.SOUND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20START%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%200%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20extensions%3A%20%5B%22colours_sounds%22%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22stopLooping%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22end%20looping%20%5BSOUND%5D%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20SOUND%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.SOUND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20extensions%3A%20%5B%22colours_sounds%22%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22isLooping%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.BOOLEAN%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22%5BSOUND%5D%20is%20looping%3F%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20SOUND%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.SOUND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20extensions%3A%20%5B%22colours_sounds%22%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20%22---%22%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22stopSound%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22stop%20sound%20%5BSOUND%5D%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20SOUND%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.SOUND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20extensions%3A%20%5B%22colours_sounds%22%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22pauseSounds%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22pause%20all%20sounds%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20SOUND%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.SOUND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20extensions%3A%20%5B%22colours_sounds%22%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22resumeSounds%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22resume%20all%20sounds%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20SOUND%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.SOUND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20extensions%3A%20%5B%22colours_sounds%22%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20%22---%22%2C%0D%0A%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22isSoundPlaying%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.BOOLEAN%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22sound%20%5BSOUND%5D%20is%20playing%3F%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20SOUND%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.SOUND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20extensions%3A%20%5B%22colours_sounds%22%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22attributeOfSound%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22%5BATTRIBUTE%5D%20of%20%5BSOUND%5D%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20ATTRIBUTE%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20menu%3A%20%22attribute%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20SOUND%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.SOUND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20extensions%3A%20%5B%22colours_sounds%22%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22getSoundEffect%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22%5BEFFECT%5D%20of%20%5BTARGET%5D%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20EFFECT%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20menu%3A%20%22effect%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20TARGET%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20menu%3A%20%22targets%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20extensions%3A%20%5B%22colours_sounds%22%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%22---%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22setProjectVolume%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22set%20project%20volume%20to%20%5BVALUE%5D%25%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20VALUE%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20100%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20extensions%3A%20%5B%22colours_sounds%22%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22changeProjectVolume%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22change%20project%20volume%20by%20%5BVALUE%5D%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20VALUE%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20-10%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20extensions%3A%20%5B%22colours_sounds%22%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22getProjectVolume%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20%22project%20volume%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20extensions%3A%20%5B%22colours_sounds%22%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%5D%2C%0D%0A%20%20%20%20%20%20%20%20menus%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20attribute%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20acceptReporters%3A%20false%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20items%3A%20%5B%22length%22%2C%20%22channels%22%2C%20%22sample%20rate%22%2C%20%22dataURI%22%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20effect%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20acceptReporters%3A%20false%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20items%3A%20%5B%22pitch%22%2C%20%22pan%22%5D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%20%20targets%3A%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20acceptReporters%3A%20true%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20items%3A%20%22_getTargets%22%2C%0D%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%7D%2C%0D%0A%20%20%20%20%20%20%7D%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20startLooping(args%2C%20util)%20%7B%0D%0A%20%20%20%20%20%20const%20index%20%3D%20this._getSoundIndex(args.SOUND%2C%20util)%3B%0D%0A%20%20%20%20%20%20if%20(index%20%3C%200)%20return%200%3B%0D%0A%20%20%20%20%20%20const%20target%20%3D%20util.target%3B%0D%0A%20%20%20%20%20%20const%20sprite%20%3D%20util.target.sprite%3B%0D%0A%0D%0A%20%20%20%20%20%20const%20soundId%20%3D%20sprite.sounds%5Bindex%5D.soundId%3B%0D%0A%20%20%20%20%20%20const%20soundPlayer%20%3D%20sprite.soundBank.soundPlayers%5BsoundId%5D%3B%0D%0A%0D%0A%20%20%20%20%20%20if%20(!soundPlayer.isPlaying)%20%7B%0D%0A%20%20%20%20%20%20%20%20soundCategory._addWaitingSound(target.id%2C%20soundId)%3B%0D%0A%20%20%20%20%20%20%20%20sprite.soundBank.playSound(util.target%2C%20soundId)%3B%0D%0A%20%20%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20%20%20if%20(!soundPlayer.outputNode)%20return%3B%0D%0A%20%20%20%20%20%20soundPlayer.outputNode.loop%20%3D%20true%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20stopLooping(args%2C%20util)%20%7B%0D%0A%20%20%20%20%20%20const%20index%20%3D%20this._getSoundIndex(args.SOUND%2C%20util)%3B%0D%0A%20%20%20%20%20%20if%20(index%20%3C%200)%20return%20false%3B%0D%0A%20%20%20%20%20%20const%20sprite%20%3D%20util.target.sprite%3B%0D%0A%0D%0A%20%20%20%20%20%20const%20soundId%20%3D%20sprite.sounds%5Bindex%5D.soundId%3B%0D%0A%20%20%20%20%20%20const%20soundPlayer%20%3D%20sprite.soundBank.soundPlayers%5BsoundId%5D%3B%0D%0A%0D%0A%20%20%20%20%20%20if%20(!soundPlayer.outputNode)%20return%3B%0D%0A%20%20%20%20%20%20soundPlayer.outputNode.loop%20%3D%20false%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20isLooping(args%2C%20util)%20%7B%0D%0A%20%20%20%20%20%20const%20index%20%3D%20this._getSoundIndex(args.SOUND%2C%20util)%3B%0D%0A%20%20%20%20%20%20if%20(index%20%3C%200)%20return%20false%3B%0D%0A%20%20%20%20%20%20const%20sprite%20%3D%20util.target.sprite%3B%0D%0A%0D%0A%20%20%20%20%20%20const%20soundId%20%3D%20sprite.sounds%5Bindex%5D.soundId%3B%0D%0A%20%20%20%20%20%20const%20soundPlayer%20%3D%20sprite.soundBank.soundPlayers%5BsoundId%5D%3B%0D%0A%0D%0A%20%20%20%20%20%20if%20(!soundPlayer.outputNode)%20return%20false%3B%0D%0A%20%20%20%20%20%20return%20soundPlayer.outputNode.loop%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20stopSound(args%2C%20util)%20%7B%0D%0A%20%20%20%20%20%20const%20index%20%3D%20this._getSoundIndex(args.SOUND%2C%20util)%3B%0D%0A%20%20%20%20%20%20if%20(index%20%3C%200)%20return%200%3B%0D%0A%20%20%20%20%20%20const%20target%20%3D%20util.target%3B%0D%0A%20%20%20%20%20%20const%20sprite%20%3D%20target.sprite%3B%0D%0A%0D%0A%20%20%20%20%20%20const%20soundId%20%3D%20sprite.sounds%5Bindex%5D.soundId%3B%0D%0A%20%20%20%20%20%20const%20soundBank%20%3D%20sprite.soundBank%3B%0D%0A%20%20%20%20%20%20soundBank.stop(target%2C%20soundId)%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20pauseSounds(args%2C%20util)%20%7B%0D%0A%20%20%20%20%20%20this._toggleSoundState(args%2C%20util%2C%20true)%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20resumeSounds(args%2C%20util)%20%7B%0D%0A%20%20%20%20%20%20this._toggleSoundState(args%2C%20util%2C%20false)%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20_toggleSoundState(args%2C%20util%2C%20state)%20%7B%0D%0A%20%20%20%20%20%20const%20sprite%20%3D%20util.target.sprite%3B%0D%0A%20%20%20%20%20%20const%20audioContext%20%3D%20sprite.soundBank.audioEngine.audioContext%3B%0D%0A%0D%0A%20%20%20%20%20%20if%20(state)%20%7B%0D%0A%20%20%20%20%20%20%20%20audioContext.suspend()%3B%0D%0A%20%20%20%20%20%20%20%20return%3B%0D%0A%20%20%20%20%20%20%7D%20else%20%7B%0D%0A%20%20%20%20%20%20%20%20audioContext.resume()%3B%0D%0A%20%20%20%20%20%20%20%20return%3B%0D%0A%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20isSoundPlaying(args%2C%20util)%20%7B%0D%0A%20%20%20%20%20%20const%20index%20%3D%20this._getSoundIndex(args.SOUND%2C%20util)%3B%0D%0A%20%20%20%20%20%20if%20(index%20%3C%200)%20return%20false%3B%0D%0A%20%20%20%20%20%20const%20sprite%20%3D%20util.target.sprite%3B%0D%0A%0D%0A%20%20%20%20%20%20const%20soundId%20%3D%20sprite.sounds%5Bindex%5D.soundId%3B%0D%0A%20%20%20%20%20%20const%20soundPlayers%20%3D%20sprite.soundBank.soundPlayers%3B%0D%0A%20%20%20%20%20%20return%20soundPlayers%5BsoundId%5D.isPlaying%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20attributeOfSound(args%2C%20util)%20%7B%0D%0A%20%20%20%20%20%20const%20index%20%3D%20this._getSoundIndex(args.SOUND%2C%20util)%3B%0D%0A%20%20%20%20%20%20if%20(index%20%3C%200)%20return%200%3B%0D%0A%20%20%20%20%20%20const%20sprite%20%3D%20util.target.sprite%3B%0D%0A%0D%0A%20%20%20%20%20%20const%20sound%20%3D%20sprite.sounds%5Bindex%5D%3B%0D%0A%20%20%20%20%20%20const%20soundId%20%3D%20sound.soundId%3B%0D%0A%20%20%20%20%20%20const%20soundPlayer%20%3D%20sprite.soundBank.soundPlayers%5BsoundId%5D%3B%0D%0A%20%20%20%20%20%20const%20soundBuffer%20%3D%20soundPlayer.buffer%3B%0D%0A%0D%0A%20%20%20%20%20%20switch%20(args.ATTRIBUTE)%20%7B%0D%0A%20%20%20%20%20%20%20%20case%20%22length%22%3A%0D%0A%20%20%20%20%20%20%20%20%20%20return%20Math.round(soundBuffer.duration%20*%20100)%20%2F%20100%3B%0D%0A%20%20%20%20%20%20%20%20case%20%22channels%22%3A%0D%0A%20%20%20%20%20%20%20%20%20%20return%20soundBuffer.numberOfChannels%3B%0D%0A%20%20%20%20%20%20%20%20case%20%22sample%20rate%22%3A%0D%0A%20%20%20%20%20%20%20%20%20%20return%20soundBuffer.sampleRate%3B%0D%0A%20%20%20%20%20%20%20%20case%20%22dataURI%22%3A%0D%0A%20%20%20%20%20%20%20%20%20%20return%20sound.asset.encodeDataURI()%3B%0D%0A%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20getSoundEffect(args%2C%20util)%20%7B%0D%0A%20%20%20%20%20%20let%20target%20%3D%20Scratch.vm.runtime.getSpriteTargetByName(args.TARGET)%3B%0D%0A%20%20%20%20%20%20if%20(args.TARGET%20%3D%3D%3D%20%22_myself_%22)%20target%20%3D%20util.target%3B%0D%0A%20%20%20%20%20%20if%20(args.TARGET%20%3D%3D%3D%20%22_stage_%22)%20target%20%3D%20runtime.getTargetForStage()%3B%0D%0A%20%20%20%20%20%20const%20effects%20%3D%20target.soundEffects%3B%0D%0A%20%20%20%20%20%20if%20(!effects)%20return%200%3B%0D%0A%20%20%20%20%20%20return%20effects%5Bargs.EFFECT%5D%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20setProjectVolume(args)%20%7B%0D%0A%20%20%20%20%20%20const%20value%20%3D%20Scratch.Cast.toNumber(args.VALUE)%3B%0D%0A%20%20%20%20%20%20const%20newVolume%20%3D%20this._wrapClamp(value%20%2F%20100%2C%200%2C%201)%3B%0D%0A%20%20%20%20%20%20runtime.audioEngine.inputNode.gain.value%20%3D%20newVolume%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20changeProjectVolume(args)%20%7B%0D%0A%20%20%20%20%20%20const%20value%20%3D%20Scratch.Cast.toNumber(args.VALUE)%20%2F%20100%3B%0D%0A%20%20%20%20%20%20const%20volume%20%3D%20runtime.audioEngine.inputNode.gain.value%3B%0D%0A%20%20%20%20%20%20const%20newVolume%20%3D%20Scratch.Cast.toNumber(%0D%0A%20%20%20%20%20%20%20%20Math.min(Math.max(volume%20%2B%20value%2C%201)%2C%200)%0D%0A%20%20%20%20%20%20)%3B%0D%0A%20%20%20%20%20%20runtime.audioEngine.inputNode.gain.value%20%3D%20newVolume%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20getProjectVolume()%20%7B%0D%0A%20%20%20%20%20%20const%20volume%20%3D%20runtime.audioEngine.inputNode.gain.value%3B%0D%0A%20%20%20%20%20%20return%20Math.round(volume%20*%2010000)%20%2F%20100%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20%2F*%20Utility%20Functions%20*%2F%0D%0A%0D%0A%20%20%20%20_getSoundIndex(soundName%2C%20util)%20%7B%0D%0A%20%20%20%20%20%20const%20len%20%3D%20util.target.sprite.sounds.length%3B%0D%0A%20%20%20%20%20%20if%20(len%20%3D%3D%3D%200)%20%7B%0D%0A%20%20%20%20%20%20%20%20return%20-1%3B%0D%0A%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%20%20const%20index%20%3D%20this._getSoundIndexByName(soundName%2C%20util)%3B%0D%0A%20%20%20%20%20%20if%20(index%20!%3D%3D%20-1)%20%7B%0D%0A%20%20%20%20%20%20%20%20return%20index%3B%0D%0A%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%20%20const%20oneIndexedIndex%20%3D%20parseInt(soundName%2C%2010)%3B%0D%0A%20%20%20%20%20%20if%20(!isNaN(oneIndexedIndex))%20%7B%0D%0A%20%20%20%20%20%20%20%20return%20this._wrapClamp(oneIndexedIndex%20-%201%2C%200%2C%20len%20-%201)%3B%0D%0A%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%20%20return%20-1%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20_getSoundIndexByName(soundName%2C%20util)%20%7B%0D%0A%20%20%20%20%20%20const%20sounds%20%3D%20util.target.sprite.sounds%3B%0D%0A%20%20%20%20%20%20for%20(let%20i%20%3D%200%3B%20i%20%3C%20sounds.length%3B%20i%2B%2B)%20%7B%0D%0A%20%20%20%20%20%20%20%20if%20(sounds%5Bi%5D.name%20%3D%3D%3D%20soundName)%20%7B%0D%0A%20%20%20%20%20%20%20%20%20%20return%20i%3B%0D%0A%20%20%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%20%20%7D%0D%0A%20%20%20%20%20%20return%20-1%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20_wrapClamp(n%2C%20min%2C%20max)%20%7B%0D%0A%20%20%20%20%20%20const%20range%20%3D%20max%20-%20min%20%2B%201%3B%0D%0A%20%20%20%20%20%20return%20n%20-%20Math.floor((n%20-%20min)%20%2F%20range)%20*%20range%3B%0D%0A%20%20%20%20%7D%0D%0A%0D%0A%20%20%20%20_getTargets()%20%7B%0D%0A%20%20%20%20%20%20let%20spriteNames%20%3D%20%5B%0D%0A%20%20%20%20%20%20%20%20%7B%20text%3A%20%22myself%22%2C%20value%3A%20%22_myself_%22%20%7D%2C%0D%0A%20%20%20%20%20%20%20%20%7B%20text%3A%20%22Stage%22%2C%20value%3A%20%22_stage_%22%20%7D%2C%0D%0A%20%20%20%20%20%20%5D%3B%0D%0A%20%20%20%20%20%20const%20targets%20%3D%20Scratch.vm.runtime.targets%0D%0A%20%20%20%20%20%20%20%20.filter((target)%20%3D%3E%20target.isOriginal%20%26%26%20!target.isStage)%0D%0A%20%20%20%20%20%20%20%20.map((target)%20%3D%3E%20target.getName())%3B%0D%0A%20%20%20%20%20%20spriteNames%20%3D%20spriteNames.concat(targets)%3B%0D%0A%20%20%20%20%20%20return%20spriteNames%3B%0D%0A%20%20%20%20%7D%0D%0A%20%20%7D%0D%0A%0D%0A%20%20Scratch.extensions.register(new%20SoundExpanded())%3B%0D%0A%7D)(Scratch)%3B%0D%0A%20%7D)(Scratch)%3B"]) {
+        vm.extensionManager.loadExtensionURL(extension);
+      }
+
+    } catch (e) {
+      handleError(e);
+    }
+  </script>
+  
+  
+    <script>
+      const getProjectData = (function() {
+        const storage = scaffolding.storage;
+        storage.onprogress = (total, loaded) => {
+          setProgress(interpolate(0.2, 0.98, loaded / total));
+        };
+        
+        storage.addWebStore(
+          [
+            storage.AssetType.ImageVector,
+            storage.AssetType.ImageBitmap,
+            storage.AssetType.Sound,
+            storage.AssetType.Font
+          ].filter(i => i),
+          (asset) => new URL('./assets/' + asset.assetId + '.' + asset.dataFormat, location).href
+        );
+        return () => new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => {
+          resolve(xhr.response);
+        };
+        xhr.onerror = () => {
+          if (location.protocol === 'file:') {
+            reject(new Error('Zip environment must be used from a website, not from a file URL.'));
+          } else {
+            reject(new Error('Request to load project data failed.'));
+          }
+        };
+        xhr.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setProgress(interpolate(0.1, 0.2, e.loaded / e.total));
+          }
+        };
+        xhr.responseType = 'arraybuffer';
+        xhr.open('GET', "./assets/project.json");
+        xhr.send();
+      });
+      })();
+    </script>
+  <script>
+    const run = async () => {
+      const projectData = await getProjectData();
+      await scaffolding.loadProject(projectData);
+      setProgress(1);
+      loadingScreen.hidden = true;
+      if (false) {
+        scaffolding.start();
+      } else {
+        launchScreen.hidden = false;
+        launchScreen.addEventListener('click', () => {
+          launchScreen.hidden = true;
+          scaffolding.start();
+        });
+        launchScreen.focus();
+      }
+    };
+    run().catch(handleError);
+  </script>
+</body>
+</html>
